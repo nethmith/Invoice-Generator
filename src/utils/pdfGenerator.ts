@@ -380,22 +380,37 @@ export const createAndSharePDF = async (invoice: Invoice): Promise<void> => {
         } else {
             const { uri } = await Print.printToFileAsync({ html });
 
-            // Generate custom filename
-            const filename = `${invoice.invoiceNumber}_${invoice.date}.pdf`;
-            const newUri = `${(FileSystem as any).documentDirectory}${filename}`;
+            try {
+                // Generate custom filename
+                const sanitizedInvNo = (invoice.invoiceNumber || 'INV').replace(/[^a-zA-Z0-9-_]/g, '-');
+                const filename = `${sanitizedInvNo}_${invoice.date || 'unknown'}.pdf`;
 
-            // Rename/Copy the file
-            await (FileSystem as any).copyAsync({
-                from: uri,
-                to: newUri
-            });
+                // Use cacheDirectory
+                const newUri = `${(FileSystem as any).cacheDirectory}${filename}`;
 
-            // Share the new file
-            await Sharing.shareAsync(newUri, {
-                UTI: '.pdf',
-                mimeType: 'application/pdf',
-                dialogTitle: `Share Invoice ${invoice.invoiceNumber}`
-            });
+                // Copy file - check if newUri is the same to avoid crash
+                if (uri !== newUri) {
+                    await (FileSystem as any).copyAsync({
+                        from: uri,
+                        to: newUri
+                    });
+                }
+
+                // Share the new file
+                await Sharing.shareAsync(newUri, {
+                    UTI: '.pdf',
+                    mimeType: 'application/pdf',
+                    dialogTitle: `Share Invoice ${invoice.invoiceNumber}`
+                });
+            } catch (renameError: any) {
+                console.warn('Renaming failed, falling back to original file:', renameError);
+                // Fallback: Share the original file if renaming failed
+                await Sharing.shareAsync(uri, {
+                    UTI: '.pdf',
+                    mimeType: 'application/pdf',
+                    dialogTitle: `Share Invoice ${invoice.invoiceNumber}`
+                });
+            }
         }
     } catch (error) {
         console.error('Error generating PDF:', error);

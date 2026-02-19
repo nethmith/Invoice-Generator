@@ -33,8 +33,8 @@ export default function InvoicePreviewScreen({ navigation, route }: Props) {
     const handleShare = async () => {
         try {
             await createAndSharePDF(invoice);
-        } catch (e) {
-            Alert.alert('Error', 'Failed to share PDF');
+        } catch (e: any) {
+            Alert.alert('Error', `Failed to share PDF: ${e.message || e}`);
         }
     };
 
