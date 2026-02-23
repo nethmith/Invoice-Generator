@@ -1,4 +1,4 @@
-# Herath Tours Invoice Generator
+# Herath Tours Invoice Generator Mobile App
 
 Professional Invoice Generator App for Herath Tours.
 
